@@ -23,24 +23,84 @@ enum Role {
   Nurse
   Receptionist
   Pharmacist
-  LabTechnician
-  BillingStaff
-  CleaningStaff
+  Lab_Technician
+  Billing_Staff
+  Cleaning_Staff
 }
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+  LAB_TECHNICIAN
+  PHARMACIST
+  PATIENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+enum BloodGroup {
+  A_POS
+  A_NEG
+  B_POS
+  B_NEG
+  AB_POS
+  AB_NEG
+  O_POS
+  O_NEG
+}
+enum Specialization {
+  CARDIOLOGY
+  DERMATOLOGY
+  PEDIATRICS
+  ORTHOPEDICS
+  NEUROLOGY
+  RADIOLOGY
+  ONCOLOGY
+  PSYCHIATRY
+  GENERAL_MEDICINE
+  ENT
+  GASTROENTEROLOGY
+  NEPHROLOGY
+  UROLOGY
+  OPHTHALMOLOGY
+  GYNECOLOGY
+  PULMONOLOGY
+  RHEUMATOLOGY
+  NONE // for non-doctor roles
+}
+
 
 model User {
-  id             String   @id @default(uuid())
-  firstName      String?
-  lastName       String?
-  email          String   @unique
-  password       String
-  role           Role
-  phone          String?
-  summary        String?
-  address        String?
-  isDeleted      Boolean  @default(false)
-  isVerified     Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
+  id        String    @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String    @unique
+  phone     String?
+  password  String
+  gender      Gender?
+  dateOfBirth DateTime?
+  role    UserRole
+  status  UserStatus @default(ACTIVE)
+  address              String?
+  emergencyContactName String?
+  emergencyContactPhone String?
+  bloodGroup      BloodGroup?
+  specialization  Specialization?     // Doctor specialty (Cardiology, etc.)
+  licenseNumber  String?     // Medical license
+  isDeleted    Boolean  @default(false)
+  isVerified   Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
+
