@@ -80,6 +80,20 @@ enum Specialization {
   NONE // for non-doctor roles
 }
 
+enum DepartmentType {
+  CARDIOLOGY
+  NEUROLOGY
+  PEDIATRICS
+  ONCOLOGY
+  RADIOLOGY
+  EMERGENCY
+  GENERAL_MEDICINE
+  ORTHOPEDICS
+  DERMATOLOGY
+  ICU
+  OPD
+}
+
 
 model User {
   id        String    @id @default(uuid())
@@ -102,5 +116,30 @@ model User {
   isVerified   Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+
+
+  departmentId String?
+  department   Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+
+  // If this user is a department head (one department head per dept)
+  headedDepartment Department? @relation("DepartmentHead")
 }
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  phone       String?
+  location    String?
+  headId      String?  @unique
+  head        User?    @relation("DepartmentHead", fields: [headId], references: [id])
+  users       User[]   @relation("UserDepartment") // Doctors, nurses, staff
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+
+
 
