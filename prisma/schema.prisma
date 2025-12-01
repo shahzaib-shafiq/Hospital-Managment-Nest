@@ -94,6 +94,12 @@ enum DepartmentType {
   OPD
 }
 
+enum NurseShift {
+  MORNING
+  EVENING
+  NIGHT
+}
+
 
 model User {
   id        String    @id @default(uuid())
@@ -102,42 +108,108 @@ model User {
   email     String    @unique
   phone     String?
   password  String
+
   gender      Gender?
   dateOfBirth DateTime?
-  role    UserRole
-  status  UserStatus @default(ACTIVE)
+  role        UserRole
+  status      UserStatus @default(ACTIVE)
+
   address              String?
-  emergencyContactName String?
-  emergencyContactPhone String?
-  bloodGroup      BloodGroup?
-  specialization  Specialization?     // Doctor specialty (Cardiology, etc.)
-  licenseNumber  String?     // Medical license
-  isDeleted    Boolean  @default(false)
-  isVerified   Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isVerified           Boolean @default(true)
+  isDeleted            Boolean @default(false)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // Department assignment for staff
+  departmentId         String?
+  department           Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+
+  // Department head
+  headedDepartment     Department? @relation("DepartmentHead")
+
+  // Profile relations
+  doctorProfile        DoctorProfile?
+  patientProfile       PatientProfile?
+  nurseProfile         NurseProfile?
+  labTechProfile       LabTechnicianProfile?
+  pharmacistProfile    PharmacistProfile?
+}
+
+model DoctorProfile {
+  id            String          @id @default(uuid())
+  userId        String          @unique
+  user          User            @relation(fields: [userId], references: [id])
+
+  specialization Specialization
+  licenseNumber  String?
+  experience     Int?
+  consultationFee Float?
+
+  departmentId   String?
+  department     Department?     @relation(fields: [departmentId], references: [id])
+}
+
+model PatientProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+
+  mrn        String   @unique          // Medical Record Number
+  bloodGroup BloodGroup?
+  height     Float?
+  weight     Float?
+  allergies  String?
+}
+model NurseProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+
+  licenseNumber String?
+  shift         NurseShift?
+  experience    Int?
+}
 
 
-  departmentId String?
-  department   Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+model LabTechnicianProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
 
-  // If this user is a department head (one department head per dept)
-  headedDepartment Department? @relation("DepartmentHead")
+  qualification String?
+  specialty     String?      // e.g. Hematology, Radiology, Microbiology
+  experience    Int?
+}
+
+model PharmacistProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+
+  licenseNumber String?
+  qualification String?
+  experience    Int?
 }
 
 model Department {
-  id          String   @id @default(uuid())
-  name        String   @unique
-  code        String   @unique
+  id          String     @id @default(uuid())
+  name        String     @unique
+  code        String     @unique
   description String?
   phone       String?
   location    String?
-  headId      String?  @unique
-  head        User?    @relation("DepartmentHead", fields: [headId], references: [id])
-  users       User[]   @relation("UserDepartment") // Doctors, nurses, staff
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+
+  headId      String?    @unique
+  head        User?      @relation("DepartmentHead", fields: [headId], references: [id])
+
+  users       User[]     @relation("UserDepartment")
+  doctorProfiles DoctorProfile[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }
+
 
 
 
