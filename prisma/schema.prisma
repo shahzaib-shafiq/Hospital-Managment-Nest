@@ -12,12 +12,35 @@ datasource db {
   provider = "postgresql"
 }
 
+// --------------------
+// ENUMS
+// --------------------
+
+enum Role {
+  ADMIN
+  Patient
+  Doctor
+  Nurse
+  Receptionist
+  Pharmacist
+  LabTechnician
+  BillingStaff
+  CleaningStaff
+}
 
 model User {
-  id        String   @id @default(uuid())
-  name      String?
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(uuid())
+  firstName      String?
+  lastName       String?
+  email          String   @unique
+  password       String
+  role           Role
+  phone          String?
+  summary        String?
+  address        String?
+  isDeleted      Boolean  @default(false)
+  isVerified     Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
 }
