@@ -124,6 +124,17 @@ enum PaymentMethod {
   BANK_TRANSFER
 }
 
+enum LabTestType {
+  BLOOD_CBC
+  LIPID_PROFILE
+  URINE_EXAM
+  XRAY
+  MRI
+  CT_SCAN
+  COVID_PCR
+}
+
+
 model User {
   id        String    @id @default(uuid())
   firstName String
@@ -161,6 +172,17 @@ model User {
   doctorAppointments  Appointment[] @relation("DoctorAppointments")
   patientAppointments Appointment[] @relation("PatientAppointments")
 
+  // Medical records created for this user (patient)
+  medicalRecords  MedicalRecord[] @relation("PatientMedicalRecords")
+
+  // Prescriptions issued BY this doctor
+  doctorPrescriptions   Prescription[]  @relation("DoctorPrescriptions")
+
+  // Prescriptions received BY this patient
+  patientPrescriptions  Prescription[]  @relation("PatientPrescriptions")
+
+  doctorLabTest  LabTest[] @relation("DoctorLabTest")
+  patientLabTest LabTest[] @relation("PatientLabTest")
 }
 
 model DoctorProfile {
@@ -246,11 +268,73 @@ model Appointment {
   status    AppointmentStatus
   doctor    User     @relation("DoctorAppointments", fields: [doctorId], references: [id])
   patient   User     @relation("PatientAppointments", fields: [patientId], references: [id])
+
+}
+
+model MedicalRecord {
+  id        String    @id @default(uuid())
+  patientId String
+  diagnosis String?
+  notes     String?
+  createdAt DateTime @default(now())
+  patient   User     @relation("PatientMedicalRecords", fields: [patientId], references: [id])
+}
+
+model Prescription {
+  id         String    @id @default(uuid())
+  patientId  String
+  doctorId   String
+  createdAt  DateTime  @default(now())
+  items      PrescriptionItem[]
+  doctor     User      @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+  patient    User      @relation("PatientPrescriptions", fields: [patientId], references: [id])
+
+}
+
+model PrescriptionItem {
+  id              String        @id @default(uuid())
+  prescriptionId  String
+  medicationId    String
+  dosage          String
+  frequency       String
+  prescription    Prescription @relation(fields: [prescriptionId], references: [id])
+  medication      Medication   @relation(fields: [medicationId], references: [id])
+}
+
+model Medication {
+  id        String              @id @default(uuid())
+  name      String
+  stock     Int                 @default(0)
+  price     Float
+  category  String?
+  prescriptionItems PrescriptionItem[]
+}
+model LabTest {
+  id         String         @id @default(uuid())
+  patientId  String
+  doctorId   String
+  testType   LabTestType
+  status     LabTestStatus  @default(PENDING)
+
+  // 1-to-1 result
+  result     LabResult?
+  requestedAt DateTime @default(now())
+  completedAt DateTime?
+  notes       String?
+
+
+  // Relations
+  doctor     User           @relation("DoctorLabTest", fields: [doctorId], references: [id])
+  patient    User           @relation("PatientLabTest", fields: [patientId], references: [id])
 }
 
 
+model LabResult {
+  id         String    @id @default(uuid())
+  labTestId  String    @unique
+  result     String?
+  createdAt  DateTime  @default(now())
 
-
-
-
+  labTest    LabTest   @relation(fields: [labTestId], references: [id])
+}
 
