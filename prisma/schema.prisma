@@ -140,6 +140,12 @@ enum RoomType {
   Double
   Triple
   Quadraple
+  GENERAL
+  SEMI_PRIVATE
+  ICU
+  HDU
+  PRIVATE
+
 }
 enum BedType {
   ICU

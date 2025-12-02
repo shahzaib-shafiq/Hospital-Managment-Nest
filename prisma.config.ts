@@ -11,7 +11,6 @@ export default defineConfig({
   },
 
   migrations: {
-    // Prisma 7 supports only these fields
-    path: './prisma/migrations',
+    seed: 'ts-node ./prisma/seed.ts',
   },
 });
