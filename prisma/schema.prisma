@@ -11,3 +11,578 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+// --------------------
+// ENUMS
+// --------------------
+
+enum Role {
+  ADMIN
+  Patient
+  Doctor
+  Nurse
+  Receptionist
+  Pharmacist
+  Lab_Technician
+  Billing_Staff
+  Cleaning_Staff
+}
+
+enum UserRole {
+  ADMIN
+  DOCTOR
+  NURSE
+  RECEPTIONIST
+  LAB_TECHNICIAN
+  PHARMACIST
+  PATIENT
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  ARCHIVED
+}
+enum BloodGroup {
+  A_POS
+  A_NEG
+  B_POS
+  B_NEG
+  AB_POS
+  AB_NEG
+  O_POS
+  O_NEG
+}
+enum Specialization {
+  CARDIOLOGY
+  DERMATOLOGY
+  PEDIATRICS
+  ORTHOPEDICS
+  NEUROLOGY
+  RADIOLOGY
+  ONCOLOGY
+  PSYCHIATRY
+  GENERAL_MEDICINE
+  ENT
+  GASTROENTEROLOGY
+  NEPHROLOGY
+  UROLOGY
+  OPHTHALMOLOGY
+  GYNECOLOGY
+  PULMONOLOGY
+  RHEUMATOLOGY
+  NONE // for non-doctor roles
+}
+
+enum DepartmentType {
+  CARDIOLOGY
+  NEUROLOGY
+  PEDIATRICS
+  ONCOLOGY
+  RADIOLOGY
+  EMERGENCY
+  GENERAL_MEDICINE
+  ORTHOPEDICS
+  DERMATOLOGY
+  ICU
+  OPD
+}
+
+enum NurseShift {
+  MORNING
+  EVENING
+  NIGHT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+enum LabTestStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+enum InvoiceStatus {
+  PAID
+  UNPAID
+  PARTIAL
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+}
+
+enum LabTestType {
+  BLOOD_CBC
+  LIPID_PROFILE
+  URINE_EXAM
+  XRAY
+  MRI
+  CT_SCAN
+  COVID_PCR
+}
+
+
+enum RoomType {
+  Single
+  Double
+  Triple
+  Quadraple
+  GENERAL
+  SEMI_PRIVATE
+  ICU
+  HDU
+  PRIVATE
+
+}
+enum BedType {
+  ICU
+  PRIVATE
+  GENERAL
+  DELUXE
+}
+
+enum RadiologyType {
+  XRAY
+  MRI
+  CT_SCAN
+  ULTRASOUND
+  MAMMOGRAPHY
+  ANGIOGRAPHY
+  OTHER
+}
+
+enum TestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+
+model User {
+  id        String    @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String    @unique
+  phone     String?
+  password  String
+
+  gender      Gender?
+  cnic String?
+  emergencyContactPhone String?
+  emergencyContactName  String?
+
+
+  dateOfBirth DateTime?
+  role        UserRole
+  status      UserStatus @default(ACTIVE)
+
+  avatarUrl String?
+  address              String?
+  isVerified           Boolean @default(true)
+  isDeleted            Boolean @default(false)
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+
+  // Department assignment for staff
+  departmentId         String?
+  department           Department? @relation("UserDepartment", fields: [departmentId], references: [id])
+
+  // Department head
+  headedDepartment     Department? @relation("DepartmentHead")
+
+  // Profile relations
+  doctorProfile        DoctorProfile?
+  patientProfile       PatientProfile?
+  nurseProfile         NurseProfile?
+  labTechProfile       LabTechnicianProfile?
+  pharmacistProfile    PharmacistProfile?
+
+  doctorAppointments  Appointment[] @relation("DoctorAppointments")
+  patientAppointments Appointment[] @relation("PatientAppointments")
+
+  // Medical records created for this user (patient)
+  medicalRecords  MedicalRecord[] @relation("PatientMedicalRecords")
+
+  // Prescriptions issued BY this doctor
+  doctorPrescriptions   Prescription[]  @relation("DoctorPrescriptions")
+
+  // Prescriptions received BY this patient
+  patientPrescriptions  Prescription[]  @relation("PatientPrescriptions")
+
+  doctorLabTest  LabTest[] @relation("DoctorLabTest")
+  patientLabTest LabTest[] @relation("PatientLabTest")
+
+  patientInvoice   Invoice[] @relation("PatientInvoice")
+  patientAdmission Admission[] @relation("PatientAdmission")
+
+  // Nursing notes written *about* this patient
+   patientNursingNotes NursingNote[] @relation("PatientNursingNotes")
+
+  // Nursing notes written *by* this nurse
+  nurseNursingNotes   NursingNote[] @relation("NurseNursingNotes")
+
+    doctorMedicalRecords MedicalRecord[] @relation("DoctorMedicalRecord")
+
+  labTechCollectedSamples LabTest[] @relation("LabTechSampleCollector")
+
+  attendingDoctorAdmissions Admission[] @relation("AttendingDoctorAdmission")
+
+  patientVitalSigns VitalSign[] @relation("PatientVitalSigns")
+nurseVitalSigns   VitalSign[] @relation("NurseVitalSigns")
+
+allergies Allergy[]
+
+patientProcedures Procedure[] @relation("PatientProcedures")
+doctorProcedures  Procedure[] @relation("DoctorProcedures")
+
+patientInsurance Insurance[] @relation("PatientInsurance")
+
+ patientRadiologyTests RadiologyTest[] @relation("PatientRadiologyTests")
+doctorRadiologyTests  RadiologyTest[] @relation("DoctorRadiologyTests")
+ 
+}
+
+model DoctorProfile {
+  id            String          @id @default(uuid())
+  userId        String          @unique
+  user          User            @relation(fields: [userId], references: [id])
+
+  specialization Specialization
+  licenseNumber  String?
+  experience     Float?
+  consultationFee Float?
+  availableFrom DateTime?
+availableTo   DateTime?
+roomNumber    String?
+
+
+  departmentId   String?
+  department     Department?     @relation(fields: [departmentId], references: [id])
+}
+
+model PatientProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+
+  mrn        String   @unique          // Medical Record Number
+  bloodGroup BloodGroup?
+  height     Float?
+  weight     Float?
+  allergies  String?
+  maritalStatus   String?
+occupation      String?
+smokingStatus   String?
+alcoholUse      String?
+chronicDiseases String?
+
+}
+model NurseProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+
+  licenseNumber String?
+  shift         NurseShift?
+  experience    Float?
+}
+
+
+model LabTechnicianProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+
+  qualification String?
+  specialty     String?      // e.g. Hematology, Radiology, Microbiology
+  experience    Float?
+}
+
+model PharmacistProfile {
+  id         String   @id @default(uuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id])
+
+  licenseNumber String?
+  qualification String?
+  experience    Float?
+}
+
+model Department {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  code        String     @unique
+  description String?
+  phone       String?
+  location    String?
+
+  headId      String?    @unique
+  head        User?      @relation("DepartmentHead", fields: [headId], references: [id])
+
+  users       User[]     @relation("UserDepartment")
+  doctorProfiles DoctorProfile[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Appointment {
+  id        String   @id @default(uuid())
+  doctorId  String
+  patientId String
+  date      DateTime
+  reason String?
+  notes  String?
+
+  status    AppointmentStatus
+  doctor    User     @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patient   User     @relation("PatientAppointments", fields: [patientId], references: [id])
+
+}
+
+model MedicalRecord {
+  id        String    @id @default(uuid())
+  patientId String
+  diagnosis String?
+  notes     String?
+  doctorId String?
+  doctor  User?  @relation("DoctorMedicalRecord", fields: [doctorId], references: [id])
+
+  createdAt DateTime @default(now())
+  patient   User     @relation("PatientMedicalRecords", fields: [patientId], references: [id])
+}
+
+model Prescription {
+  id         String    @id @default(uuid())
+  patientId  String
+  doctorId   String
+  createdAt  DateTime  @default(now())
+  items      PrescriptionItem[]
+  doctor     User      @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+  patient    User      @relation("PatientPrescriptions", fields: [patientId], references: [id])
+}
+
+model PrescriptionItem {
+  id              String        @id @default(uuid())
+  prescriptionId  String
+  medicationId    String
+  dosage          String
+  frequency       String
+  prescription    Prescription @relation(fields: [prescriptionId], references: [id])
+  medication      Medication   @relation(fields: [medicationId], references: [id])
+}
+
+model Medication {
+  id        String              @id @default(uuid())
+  name      String
+  stock     Int                 @default(0)
+  price     Float
+  category  String?
+  expiryDate DateTime?
+  batchNo    String?
+  manufacturer String?
+
+  prescriptionItems PrescriptionItem[]
+}
+model LabTest {
+  id         String         @id @default(uuid())
+  patientId  String
+  doctorId   String
+  testType   LabTestType
+  status     LabTestStatus  @default(PENDING)
+  sampleCollectedById String?
+  sampleCollectedBy    User? @relation("LabTechSampleCollector", fields: [sampleCollectedById], references: [id])
+
+
+  // 1-to-1 result
+  result     LabResult?
+  requestedAt DateTime @default(now())
+  completedAt DateTime?
+  notes       String?
+
+
+  // Relations
+  doctor     User           @relation("DoctorLabTest", fields: [doctorId], references: [id])
+  patient    User           @relation("PatientLabTest", fields: [patientId], references: [id])
+
+}
+
+model LabResult {
+  id         String    @id @default(uuid())
+  labTestId  String    @unique
+  result     String?
+  createdAt  DateTime  @default(now())
+  labTest    LabTest   @relation(fields: [labTestId], references: [id])
+}
+
+model Invoice {
+  id         String   @id @default(uuid())
+  patientId  String
+  amount     Float
+  status     InvoiceStatus @default(UNPAID)
+  createdAt  DateTime @default(now())
+  payments Payment[]
+  patient    User     @relation("PatientInvoice", fields: [patientId], references: [id])
+  billingItems BillingItem[]
+
+}
+
+model Payment {
+  id        String   @id @default(uuid())
+  invoiceId String
+  amount    Float
+  method    PaymentMethod
+  createdAt DateTime @default(now())
+  invoice Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+
+model Admission {
+  id           String   @id @default(uuid())
+  patientId    String
+  bedId        String?
+  admittedAt   DateTime @default(now())
+  dischargedAt DateTime?
+  reason    String?
+attendingDoctorId String?
+attendingDoctor   User? @relation("AttendingDoctorAdmission", fields: [attendingDoctorId], references: [id])
+
+  patient      User      @relation("PatientAdmission", fields: [patientId], references: [id])
+  bed          Bed?      @relation(fields: [bedId], references: [id])
+}
+
+
+model Ward {
+  id       String   @id @default(uuid())
+  name     String
+  floor    String?
+  gender   Gender?
+  building String
+  rent     Float
+  rooms    Room[]
+}
+
+model Room {
+  id       String   @id @default(uuid())
+  name     String?
+  floor    String?
+  gender   Gender?
+  building String
+  rent     Float
+  type     RoomType
+
+  wardId   String
+  ward     Ward     @relation(fields: [wardId], references: [id])
+
+  beds     Bed[]
+}
+
+model Bed {
+  id        String   @id @default(uuid())
+  roomId    String
+  number    Int
+  occupied  Boolean  @default(false)
+  bedType BedType?
+
+  room      Room     @relation(fields: [roomId], references: [id])
+  admissions Admission[]
+}
+
+model NursingNote {
+  id        String   @id @default(uuid())
+  patientId String
+  nurseId   String
+  note      String
+  createdAt DateTime @default(now())
+
+  // Relations
+  patient   User     @relation("PatientNursingNotes", fields: [patientId], references: [id])
+  nurse     User     @relation("NurseNursingNotes", fields: [nurseId], references: [id])
+}
+
+model VitalSign {
+  id           String   @id @default(uuid())
+  patientId    String
+  nurseId      String?
+  temperature  Float?
+  pulse        Int?
+  respiration  Int?
+  bloodPressure String?
+  recordedAt   DateTime @default(now())
+
+  patient      User @relation("PatientVitalSigns", fields: [patientId], references: [id])
+  nurse        User? @relation("NurseVitalSigns", fields: [nurseId], references: [id])
+}
+
+model Allergy {
+  id        String   @id @default(uuid())
+  patientId String
+  name      String
+  severity  String?
+  notes     String?
+  patient   User @relation(fields: [patientId], references: [id])
+}
+
+model Procedure {
+  id         String   @id @default(uuid())
+  patientId  String
+  doctorId   String
+  name       String
+  date       DateTime @default(now())
+  notes      String?
+
+  patient    User @relation("PatientProcedures", fields: [patientId], references: [id])
+  doctor     User @relation("DoctorProcedures", fields: [doctorId], references: [id])
+}
+
+
+model BillingItem {
+  id          String   @id @default(uuid())
+  invoiceId   String
+  description String
+  amount      Float
+
+  invoice     Invoice @relation(fields: [invoiceId], references: [id])
+}
+
+model Insurance {
+  id       String   @id @default(uuid())
+  patientId String
+  provider String
+  policyNo String
+  coverage Float?
+  validTill DateTime?
+
+  patient User @relation("PatientInsurance", fields: [patientId], references: [id])
+
+}
+
+model RadiologyTest {
+  id         String       @id @default(uuid())
+  patientId  String
+  doctorId   String
+  type       RadiologyType
+  status     TestStatus   @default(PENDING)
+  resultUrl  String?
+  createdAt  DateTime     @default(now())
+
+  patient User @relation("PatientRadiologyTests", fields: [patientId], references: [id])
+  doctor  User @relation("DoctorRadiologyTests", fields: [doctorId], references: [id])
+}
+
