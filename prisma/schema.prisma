@@ -100,6 +100,29 @@ enum NurseShift {
   NIGHT
 }
 
+enum AppointmentStatus {
+  SCHEDULED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+enum LabTestStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+enum InvoiceStatus {
+  PAID
+  UNPAID
+  PARTIAL
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+}
 
 model User {
   id        String    @id @default(uuid())
@@ -134,6 +157,10 @@ model User {
   nurseProfile         NurseProfile?
   labTechProfile       LabTechnicianProfile?
   pharmacistProfile    PharmacistProfile?
+
+  doctorAppointments  Appointment[] @relation("DoctorAppointments")
+  patientAppointments Appointment[] @relation("PatientAppointments")
+
 }
 
 model DoctorProfile {
@@ -143,7 +170,7 @@ model DoctorProfile {
 
   specialization Specialization
   licenseNumber  String?
-  experience     Int?
+  experience     Float?
   consultationFee Float?
 
   departmentId   String?
@@ -160,6 +187,7 @@ model PatientProfile {
   height     Float?
   weight     Float?
   allergies  String?
+  
 }
 model NurseProfile {
   id         String   @id @default(uuid())
@@ -168,7 +196,7 @@ model NurseProfile {
 
   licenseNumber String?
   shift         NurseShift?
-  experience    Int?
+  experience    Float?
 }
 
 
@@ -179,7 +207,7 @@ model LabTechnicianProfile {
 
   qualification String?
   specialty     String?      // e.g. Hematology, Radiology, Microbiology
-  experience    Int?
+  experience    Float?
 }
 
 model PharmacistProfile {
@@ -189,7 +217,7 @@ model PharmacistProfile {
 
   licenseNumber String?
   qualification String?
-  experience    Int?
+  experience    Float?
 }
 
 model Department {
@@ -209,6 +237,17 @@ model Department {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 }
+
+model Appointment {
+  id        String   @id @default(uuid())
+  doctorId  String
+  patientId String
+  date      DateTime
+  status    AppointmentStatus
+  doctor    User     @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  patient   User     @relation("PatientAppointments", fields: [patientId], references: [id])
+}
+
 
 
 
